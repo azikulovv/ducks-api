@@ -15,16 +15,7 @@ const profileFieldsSchema = z.object({
   avatarHash: z.string().trim().or(z.literal('')),
 })
 
-export const updateProfileSchema = profileFieldsSchema
-  .partial()
-  .refine(
-    (value) =>
-      value.phone !== undefined ||
-      value.nickname !== undefined ||
-      value.avatarUrl !== undefined ||
-      value.avatarHash !== undefined,
-    { message: `Требуется заполнить хотя бы одно поле` },
-  )
+export const updateProfileSchema = profileFieldsSchema.partial()
 
 export const getProfileByNicknameQuerySchema = z.object({
   nickname: nicknameSchema,
