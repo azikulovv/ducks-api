@@ -20,6 +20,8 @@ const isHttpUrl = (value: string) => {
   }
 }
 
+const isWebAppUrl = (value: string) => value.startsWith('/') || isHttpUrl(value)
+
 export const createBroadcastSchema = z.object({
   message: z
     .string()
@@ -42,7 +44,10 @@ export const createBroadcastSchema = z.object({
     z
       .string()
       .max(2048, 'Ссылка на кнопку слишком длинная')
-      .refine(isHttpUrl, 'Ссылка на кнопку должна начинаться с http:// или https://'),
+      .refine(
+        isWebAppUrl,
+        'Укажите путь внутри Web App или ссылку, начинающуюся с http:// или https://',
+      ),
   ),
 }).superRefine((data, ctx) => {
   if (Boolean(data.buttonText) === Boolean(data.buttonUrl)) return

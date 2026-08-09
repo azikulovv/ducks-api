@@ -17,6 +17,16 @@ describe('createBroadcastSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts a relative Web App path', () => {
+    const result = createBroadcastSchema.safeParse({
+      message: 'Тестовая рассылка',
+      buttonText: 'Открыть событие',
+      buttonUrl: '/events/event-id',
+    })
+
+    expect(result.success).toBe(true)
+  })
+
   it('rejects a button without a URL', () => {
     const result = createBroadcastSchema.safeParse({
       message: 'Тестовая рассылка',
