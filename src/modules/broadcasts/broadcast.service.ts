@@ -1,7 +1,10 @@
-import type { PrismaClient } from '@prisma/client'
-import { notFound } from '../../common/errors/app-error.js'
-import { getPagination, paginated } from '../../common/utils/pagination.js'
-import type { BroadcastListQuery, CreateBroadcastDto } from './broadcast.schemas.js'
+import type { PrismaClient } from "@prisma/client";
+import { notFound } from "../../common/errors/app-error.js";
+import { getPagination, paginated } from "../../common/utils/pagination.js";
+import type {
+  BroadcastListQuery,
+  CreateBroadcastDto,
+} from "./broadcast.schemas.js";
 
 export class BroadcastService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -17,32 +20,37 @@ export class BroadcastService {
         id: true,
         telegramId: true,
       },
-    })
+    });
 
     const recipients = users.flatMap((user) => {
-      const telegramUserId = Number(user.telegramId)
+      const telegramUserId = Number(user.telegramId);
 
       if (!telegramUserId) {
-        return []
+        return [];
       }
 
-      return [{
-        userId: user.id,
-        telegramUserId,
-        type: 'broadcast',
-        message: dto.message,
-      } as const]
-    })
+      return [
+        {
+          userId: user.id,
+          telegramUserId,
+          type: "broadcast",
+          message: dto.message,
+        } as const,
+      ];
+    });
 
     return this.prisma.$transaction(async (tx) => {
       const broadcast = await tx.broadcast.create({
         data: {
           message: dto.message,
+          imageUrl: dto.imageUrl ?? null,
+          buttonText: dto.buttonText ?? null,
+          buttonUrl: dto.buttonUrl ?? null,
           totalUsers: users.length,
           createdCount: recipients.length,
           skippedCount: users.length - recipients.length,
         },
-      })
+      });
 
       if (recipients.length) {
         await tx.notificationQueue.createMany({
@@ -50,19 +58,19 @@ export class BroadcastService {
             ...recipient,
             broadcastId: broadcast.id,
           })),
-        })
+        });
       }
 
-      return broadcast
-    })
+      return broadcast;
+    });
   }
 
   async findAll(query: BroadcastListQuery) {
-    const pagination = getPagination(query)
+    const pagination = getPagination(query);
     const [broadcasts, total] = await this.prisma.$transaction([
       this.prisma.broadcast.findMany({
         ...pagination,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           notifications: {
             select: { status: true },
@@ -70,7 +78,7 @@ export class BroadcastService {
         },
       }),
       this.prisma.broadcast.count(),
-    ])
+    ]);
 
     return paginated(
       broadcasts.map(({ notifications, ...broadcast }) => ({
@@ -79,7 +87,7 @@ export class BroadcastService {
       })),
       total,
       query,
-    )
+    );
   }
 
   async findById(id: string) {
@@ -87,7 +95,7 @@ export class BroadcastService {
       where: { id },
       include: {
         notifications: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: "asc" },
           include: {
             user: {
               select: {
@@ -101,11 +109,11 @@ export class BroadcastService {
           },
         },
       },
-    })
+    });
 
-    if (!broadcast) throw notFound('Рассылка не найдена')
+    if (!broadcast) throw notFound("Рассылка не найдена");
 
-    const { notifications, ...data } = broadcast
+    const { notifications, ...data } = broadcast;
 
     return {
       ...data,
@@ -114,22 +122,22 @@ export class BroadcastService {
         id: notification.id,
         user: notification.user,
         telegramUserId: notification.telegramUserId,
-        deliveryStatus: notification.status === 'sent' ? 'sent' : 'not_sent',
+        deliveryStatus: notification.status === "sent" ? "sent" : "not_sent",
         queueStatus: notification.status,
         attempts: notification.attempts,
         sentAt: notification.sentAt,
         error: notification.error,
       })),
-    }
+    };
   }
 
   private getDeliveryStats(notifications: Array<{ status: string }>) {
-    const sent = notifications.filter(({ status }) => status === 'sent').length
+    const sent = notifications.filter(({ status }) => status === "sent").length;
 
     return {
       total: notifications.length,
       sent,
       notSent: notifications.length - sent,
-    }
+    };
   }
 }

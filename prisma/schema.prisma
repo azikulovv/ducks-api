@@ -258,6 +258,9 @@ enum NotificationType {
 model Broadcast {
   id            String              @id @default(cuid())
   message       String
+  imageUrl      String?
+  buttonText    String?
+  buttonUrl     String?
   totalUsers    Int
   createdCount  Int
   skippedCount  Int

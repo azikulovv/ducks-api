@@ -58,6 +58,15 @@ export class NotificationQueueService {
           increment: 1,
         },
       },
+      include: {
+        broadcast: {
+          select: {
+            imageUrl: true,
+            buttonText: true,
+            buttonUrl: true,
+          },
+        },
+      },
     })
 
     try {
@@ -65,10 +74,15 @@ export class NotificationQueueService {
         {
           telegramUserId: notification.telegramUserId,
           message: notification.message,
+          ...(notification.broadcast?.imageUrl && { imageUrl: notification.broadcast.imageUrl }),
+          ...(notification.broadcast?.buttonText && {
+            buttonText: notification.broadcast.buttonText,
+          }),
+          ...(notification.broadcast?.buttonUrl && { buttonUrl: notification.broadcast.buttonUrl }),
         },
         {
           throwOnError: true,
-          timeoutMs: 10_000,
+          timeoutMs: 30_000,
         },
       )
 
